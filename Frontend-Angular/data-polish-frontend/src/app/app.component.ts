@@ -53,6 +53,7 @@ export class AppComponent {
     }
     console.log(this.currentpage)
     let login:string = this.cookieService.get('LOGIN');
+    this.isLoggedin = true;
     if(login=='TRUE'){
       this.isLoggedin = true;
     }
