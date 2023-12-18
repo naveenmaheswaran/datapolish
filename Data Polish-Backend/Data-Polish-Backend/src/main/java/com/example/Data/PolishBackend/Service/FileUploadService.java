@@ -50,27 +50,14 @@ public class FileUploadService {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("File cannot be blank!");
         }
 
-        // Set up the Azure Blob Service Client
-        BlobServiceClient blobServiceClient = new BlobServiceClientBuilder()
-                .connectionString(azureConnectionString)
-                .buildClient();
 
-        // Set up the Blob Container Client
-        BlobContainerClient containerClient = blobServiceClient.getBlobContainerClient("csv");
+
 
 
         try {
-            // Create a unique blob name
-            String blobName = file.getOriginalFilename();
 
-            // Create a BlobClient
-            BlobClient blobClient = containerClient.getBlobClient(blobName);
 
-            // Upload the file to Azure Blob Storage
-            blobClient.upload(file.getInputStream(), file.getSize(), true);
-
-            // call stored procedure to store filename in DB and get jobid
-            String fileName = blobName;
+            String fileName = "file";
             String sql = "CALL getjobid(?)";
             String jobID = jdbcTemplate.queryForObject(sql,String.class,fileName);
 
@@ -78,20 +65,7 @@ public class FileUploadService {
             String jsonMessage = "{\"filename\":\"" + fileName + "\", \"jobID\":\"" + jobID + "\"}";
 
             // Connect to Azure Service Bus
-            ServiceBusSenderClient senderClient = new ServiceBusClientBuilder()
-                    .connectionString(serviceBusConnectionString)
-                    .sender()
-                    .queueName(queueName)
-                    .buildClient();
 
-            // Create a message with the JSON body with filename and jobID
-            ServiceBusMessage message = new ServiceBusMessage(BinaryData.fromString(jsonMessage));
-
-            // Send the message to the Azure Service Bus queue
-            senderClient.sendMessage(message);
-
-            // Close the sender client
-            senderClient.close();
 
             return ResponseEntity.status(HttpStatus.CREATED).body(jsonMessage);
         } catch (Exception e) {
